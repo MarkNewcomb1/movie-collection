@@ -1,0 +1,25 @@
+# dependencies
+node_modules/
+.pnpm-store/
+
+# build outputs
+dist/
+.astro/
+
+# env files (secrets)
+.env
+.env.local
+
+# logs
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# editor/OS cruft
+.DS_Store
+Thumbs.db
+
+# generated data
+data/movies.json
+public/posters/
