@@ -1,25 +1,28 @@
-# dependencies
-node_modules/
-.pnpm-store/
-
-# build outputs
+# build output
 dist/
+# generated types
 .astro/
 
-# env files (secrets)
-.env
-.env.local
+# dependencies
+node_modules/
 
 # logs
 npm-debug.log*
-pnpm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+pnpm-debug.log*
 
-# editor/OS cruft
+
+# environment variables
+.env
+.env.production
+.env.local
+
+# macOS-specific files
 .DS_Store
-Thumbs.db
 
-# generated data
-data/movies.json
+# jetbrains setting folder
+.idea/
+
+# movies
 public/posters/
