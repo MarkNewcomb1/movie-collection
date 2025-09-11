@@ -1,4 +1,6 @@
 ---
+import { undefined } from "astro:schema";
+
 /** DEBUG: make sure we’re running the project you’re editing */
 console.log("Astro CWD:", process.cwd());
 
@@ -11,7 +13,6 @@ const tokenPrefix = V4 ? String(V4).slice(0, 10) : "(missing)";
 console.log("TMDB v4 token prefix:", tokenPrefix);
 
 /** Results & debug info */
-let items = [];
 let debug = {
   usingV4: false as boolean,
   v4Status: null as null | number,
@@ -22,26 +23,41 @@ let debug = {
   cwd: process.cwd(),
 };
 
-/** Try v4 list fetch first (requires Bearer token header) */
-if (V4) {
-  try {
-    const res = await fetch("https://api.themoviedb.org/4/list/8556662", {
-      headers: { Authorization: `Bearer ${V4}` },
+async function fetchAll() {
+  let page = 1;
+  const all: any[] = [];
+
+  while (true) {
+    const res = await fetch(`https://api.themoviedb.org/4/list/8556662?page=${page}`, {
+      headers: { Authorization: `Bearer ${V4}` }
     });
-    debug.v4Status = res.status;
-    if (res.ok) {
-      const data = await res.json();
-      items = Array.isArray(data.results) ? data.results : [];
-      debug.usingV4 = true;
-    } else {
-      debug.v4Body = await res.text();
-      console.error("TMDB v4 error:", debug.v4Status, debug.v4Body);
+
+    if (!res.ok) {
+      console.error("TMDB v4 error:", res.status, await res.text());
+      break;
     }
-  } catch (e: any) {
-    debug.v4Body = `Network/Code error: ${e?.message ?? e}`;
-    console.error("TMDB v4 fetch threw:", e);
+
+    const data = await res.json();
+    const results = Array.isArray(data.results) ? data.results : [];
+    all.push(...results);
+
+    const totalPages = Number(data.total_pages ?? 1);
+    if (page >= totalPages) break;
+    page += 1;
   }
+
+  return all;
 }
+
+const items = await fetchAll();
+
+items.sort((a, b) =>
+  (a.title || a.name || "").localeCompare(
+    b.title || b.name || "",
+    undefined,
+    { numeric: true, sensitivity: "base" }
+  )
+);
 
 /** Helpers */
 function yearFromDate(d: string | { release_date?: string; first_air_date?: string } | undefined) {
@@ -60,6 +76,10 @@ function yearFromDate(d: string | { release_date?: string; first_air_date?: stri
 }
 function posterUrl(path?: string | null, size = "w342") {
   return path ? `https://image.tmdb.org/t/p/${size}${path}` : "/placeholder.svg";
+}
+
+function displayTitle(item: { title?: string; name?: string }) {
+  return item.title || item.name || "Untitled";
 }
 ---
 <html lang="en">
@@ -102,7 +122,7 @@ function posterUrl(path?: string | null, size = "w342") {
           <article class="card">
             <img src={posterUrl(m.poster_path)} alt={`${m.title} poster`} loading="lazy" />
             <div class="meta">
-              <p class="title">{m.title}</p>
+              <p class="title">{displayTitle(m)}</p>
               <p class="sub">{yearFromDate(m) ?? "Unknown year"}</p>
             </div>
           </article>
